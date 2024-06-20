@@ -25,7 +25,7 @@ require (
 	github.com/pefish/go-desensitize v0.0.7 // indirect
 	github.com/pefish/go-format v0.3.2 // indirect
 	github.com/pefish/go-http v0.7.0 // indirect
-	github.com/pefish/go-jsvm v1.2.1 // indirect
+	github.com/pefish/go-jsvm v1.2.2 // indirect
 	github.com/pefish/go-mysql v1.4.6 // indirect
 	github.com/pefish/go-time v0.3.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

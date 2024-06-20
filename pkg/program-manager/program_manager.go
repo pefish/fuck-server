@@ -10,6 +10,7 @@ import (
 	vm "github.com/pefish/go-jsvm"
 	go_logger "github.com/pefish/go-logger"
 	go_mysql "github.com/pefish/go-mysql"
+	"github.com/pkg/errors"
 )
 
 type ProgramManagerType struct {
@@ -60,7 +61,7 @@ func (lm *ProgramManagerType) FlushLogs() {
 			},
 		},
 	)
-	if err != nil {
+	if err != nil && !errors.Is(err, go_mysql.ErrorNoAffectedRows) {
 		lm.logger.Error(err)
 		return
 	}
@@ -107,8 +108,8 @@ func (lm *ProgramManagerType) watchLogs(ctx context.Context) error {
 	}
 }
 
-func (lm *ProgramManagerType) Run() {
-	ctx, cancel := context.WithCancel(context.Background())
+func (lm *ProgramManagerType) Run(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	go func() {
@@ -143,14 +144,19 @@ func (lm *ProgramManagerType) Run() {
 		return
 	}
 
+	lm.wrappedVm.ConsoleModule.SetHookFunc(func(data ...interface{}) {
+		lm.PushLog(lm.logger.FormatOutput(data...))
+	})
+
 	_, err = lm.wrappedVm.Run()
 	if err != nil {
+		errMsg := fmt.Sprintf(
+			"Program <%s> exited with error <%s>.",
+			lm.program.Name,
+			err.Error(),
+		)
 		lm.PushLogAndFlush(
-			fmt.Sprintf(
-				"Program <%s> exited with error <%s>.",
-				lm.program.Name,
-				err.Error(),
-			),
+			errMsg,
 		)
 
 		_, err := go_mysql.MysqlInstance.Update(
@@ -168,6 +174,7 @@ func (lm *ProgramManagerType) Run() {
 			lm.logger.Error(err)
 			return
 		}
+		lm.logger.Error(errMsg)
 		return
 	}
 
@@ -186,4 +193,6 @@ func (lm *ProgramManagerType) Run() {
 		lm.logger.Error(err)
 		return
 	}
+	lm.logger.InfoF("Program <%s> exited.", lm.program.Name)
+	lm.FlushLogs()
 }

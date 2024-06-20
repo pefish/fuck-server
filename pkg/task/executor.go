@@ -46,7 +46,7 @@ func (t *ExecutorType) Run(ctx context.Context) error {
 		t.Logger().InfoF("New program <%s>.", program.Name)
 		go func(program db.Program) {
 			programManager := program_manager.NewProgramManager(t.Logger(), program)
-			programManager.Run()
+			programManager.Run(ctx)
 		}(program)
 	}
 	return nil
